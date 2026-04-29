@@ -7,13 +7,13 @@ services:
   pihole:
     image: pihole/pihole:latest
     container_name: pihole
-    network_mode: host          # host mode avoids port 53 conflicts
+    network_mode: host          # host mode required for port 53 access
     environment:
       - TZ=${TZ}
       - WEBPASSWORD=${PIHOLE_PASSWORD}
       - PIHOLE_DNS_=1.1.1.1;1.0.0.1
       - DNSMASQ_LISTENING=all
-      - WEB_PORT=8053
+      - FTLCONF_webserver_port=8053  # Pi-hole v6 way to set web port
     volumes:
       - ${CONFIG_ROOT}/pihole/etc-pihole:/etc/pihole
       - ${CONFIG_ROOT}/pihole/etc-dnsmasq.d:/etc/dnsmasq.d

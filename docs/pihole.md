@@ -2,21 +2,46 @@
 
 Pi-hole blocks ads and trackers network-wide at the DNS level — no browser extension needed on any device.
 
+---
+
 ## Before Starting — Free Port 53
 
-The UGREEN NAS runs its own DNS service on port 53 which conflicts with Pi-hole.
-Disable it first:
+The UGREEN NAS runs its own `dnsmasq` DNS service on port 53 which conflicts with Pi-hole.
+Disable it first via SSH:
 
-1. UGOS Web UI → **Network → DNS**
-2. Disable the local DNS resolver
-3. Save
+```bash
+sudo systemctl stop dnsmasq
+sudo systemctl disable dnsmasq
+```
 
-Now Pi-hole can bind to port 53 properly using `network_mode: host`.
+Verify port 53 is free:
+```bash
+sudo ss -tulpn | grep :53
+# Should show nothing on port 53
+```
+
+Now bring Pi-hole up:
+```bash
+sudo docker compose up -d pihole
+```
+
+---
+
+## Pi-hole v6 Note
+
+This stack uses Pi-hole v6 which configures settings differently from older versions.
+The web port is set via `FTLCONF_webserver_port=8053` in the compose file — the old
+`WEB_PORT` variable no longer works.
+
+---
 
 ## First Login
 
 Open `http://NAS_IP:8053/admin`
+
 Password is whatever you set as `PIHOLE_PASSWORD` in `.env`.
+
+---
 
 ## Set Pi-hole as Your Router DNS
 
@@ -28,16 +53,20 @@ Password is whatever you set as `PIHOLE_PASSWORD` in `.env`.
 
 All devices on the network now use Pi-hole automatically.
 
+---
+
 ## Enable DHCP (Optional)
 
-If you want Pi-hole to handle DHCP (assigns IPs to devices) instead of your router:
+If you want Pi-hole to handle DHCP instead of your router:
 
 1. Pi-hole Admin → **Settings → DHCP**
 2. Enable DHCP server
 3. Set IP range (e.g. `192.168.1.100` to `192.168.1.200`)
 4. Set Gateway to your router IP
 5. Save
-6. Disable DHCP on your router to avoid conflicts
+6. Then disable DHCP on your router to avoid conflicts
+
+---
 
 ## Add Block Lists
 
@@ -49,6 +78,8 @@ Recommended:
 - `https://blocklistproject.github.io/Lists/malware.txt`
 
 After adding: **Tools → Update Gravity**
+
+---
 
 ## Verify It's Working
 ```bash
