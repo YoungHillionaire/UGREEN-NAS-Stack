@@ -2,7 +2,7 @@
 
 # 🖥️ UGREEN NAS DXP2800 — Home Media Stack
 
-**A fully automated self-hosted media server stack built on Docker Compose.**
+**A fully automated self-hosted media server stack built on Docker Compose.**  
 **Runs on UGREEN NAS DXP2800 with Intel QuickSync hardware transcoding.**
 
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
@@ -21,9 +21,10 @@
 | [Sonarr](https://sonarr.tv) | TV show automation | `8989` |
 | [Radarr](https://radarr.video) | Movie automation | `7878` |
 | [Prowlarr](https://github.com/Prowlarr/Prowlarr) | Indexer manager | `9696` |
-| [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) | Cloudflare bypass for indexers | `8191` |
+| [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) | Cloudflare bypass | `8191` |
 | [qBittorrent](https://www.qbittorrent.org) | Download client | `8080` |
 | [Pi-hole](https://pi-hole.net) | Network-wide ad-blocker & DNS | `8053` |
+| [Tailscale](https://tailscale.com) | Secure remote access VPN | — |
 
 ---
 
@@ -63,15 +64,16 @@ downloads instantly — zero extra disk space, qBittorrent keeps seeding, Plex s
 - Docker installed via UGOS App Center
 - SSH access enabled
 - A [Plex account](https://plex.tv)
+- A [Tailscale account](https://tailscale.com) (free tier is fine)
 
-### 2. Prepare Pi-hole (important — do this first)
-Pi-hole needs port 53. Disable the NAS built-in DNS first:
-- UGOS Web UI → **Network → DNS → Disable**
+### 2. Prepare Pi-hole — free port 53
+```bash
+sudo systemctl stop dnsmasq
+sudo systemctl disable dnsmasq
+```
 
 ### 3. Create shared folders in UGOS
-In UGOS File Manager create two shared folders:
-- `data`
-- `docker`
+In UGOS File Manager create two shared folders: `data` and `docker`
 
 ### 4. Clone the repo onto your NAS
 ```bash
@@ -93,14 +95,15 @@ nano .env
 ```
 
 Fill in:
-- `PUID` / `PGID` — run `id your-username` to get these
+- `PUID` / `PGID` — run `id your-username`
 - `PIHOLE_PASSWORD` — anything you want
-- `PLEX_CLAIM` — grab from [plex.tv/claim](https://plex.tv/claim) right before launch
+- `TAILSCALE_AUTHKEY` — from [tailscale.com/admin/settings/keys](https://login.tailscale.com/admin/settings/keys)
+- `PLEX_CLAIM` — from [plex.tv/claim](https://plex.tv/claim) right before launch
 
 ### 7. Launch
 ```bash
 sudo docker compose up -d
-sudo docker compose ps    # verify all containers are Up
+sudo docker compose ps
 ```
 
 ---
@@ -116,6 +119,8 @@ sudo docker compose ps    # verify all containers are Up
 | Plex | `http://NAS_IP:32400/web` |
 | Pi-hole | `http://NAS_IP:8053/admin` |
 
+> Once Tailscale is running, replace `NAS_IP` with your Tailscale IP to access everything remotely.
+
 ---
 
 ## 📚 Documentation
@@ -129,18 +134,18 @@ sudo docker compose ps    # verify all containers are Up
 - [Radarr Setup](docs/radarr.md) — movie automation
 - [Plex Setup](docs/plex.md) — libraries and hardware transcoding
 - [Pi-hole Setup](docs/pihole.md) — network ad-blocking and DHCP
+- [Tailscale Setup](docs/tailscale.md) — secure remote access
 
 ---
 
 ## ⚙️ Useful Commands
 
 ```bash
-sudo docker compose up -d          # start all containers
-sudo docker compose down           # stop all containers
-sudo docker compose ps             # check status
-sudo docker compose logs -f        # live logs
-sudo docker compose pull           # update all images
-sudo make pull                     # update + restart in one command
+sudo docker compose up -d            # start all containers
+sudo docker compose down             # stop all containers
+sudo docker compose ps               # check status
+sudo docker compose logs -f          # live logs
+sudo make pull                       # update all images + restart
 ```
 
 ---

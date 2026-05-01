@@ -1,19 +1,40 @@
 services:
 
   # ─────────────────────────────────────────────
+  # REMOTE ACCESS
+  # ─────────────────────────────────────────────
+
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: ugreen-nas
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - /var/lib/tailscale:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TS_AUTHKEY=${TAILSCALE_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
   # DNS / AD-BLOCKING
   # ─────────────────────────────────────────────
 
   pihole:
     image: pihole/pihole:latest
     container_name: pihole
-    network_mode: host          # host mode required for port 53 access
+    network_mode: host
     environment:
       - TZ=${TZ}
       - WEBPASSWORD=${PIHOLE_PASSWORD}
       - PIHOLE_DNS_=1.1.1.1;1.0.0.1
       - DNSMASQ_LISTENING=all
-      - FTLCONF_webserver_port=8053  # Pi-hole v6 way to set web port
+      - FTLCONF_webserver_port=8053
     volumes:
       - ${CONFIG_ROOT}/pihole/etc-pihole:/etc/pihole
       - ${CONFIG_ROOT}/pihole/etc-dnsmasq.d:/etc/dnsmasq.d

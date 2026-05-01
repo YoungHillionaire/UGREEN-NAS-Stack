@@ -45,3 +45,9 @@ One-time token linking Plex to your account.
 Get it at https://plex.tv/claim — **expires in 4 minutes**.
 Grab it right before running `docker compose up` the first time.
 After first launch you can clear this from `.env`.
+
+### `TAILSCALE_AUTHKEY`
+Auth key from your Tailscale admin panel:
+https://login.tailscale.com/admin/settings/keys
+
+**Use a reusable key** so the container re-authenticates after reboots without needing a new key.
