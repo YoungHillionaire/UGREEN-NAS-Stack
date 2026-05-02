@@ -42,6 +42,7 @@ downloads instantly — zero extra disk space, qBittorrent keeps seeding, Plex s
 │       ├── qbittorrent/
 │       ├── prowlarr/
 │       ├── sonarr/
+│       ├── sonarr-anime/
 │       ├── radarr/
 │       ├── plex/
 │       └── pihole/
@@ -51,10 +52,11 @@ downloads instantly — zero extra disk space, qBittorrent keeps seeding, Plex s
     ├── torrents/
     │   ├── movies/           ← qBittorrent downloads here (category: radarr)
     │   ├── tv/               ← qBittorrent downloads here (category: sonarr)
-│   └── anime/            ← qBittorrent downloads here (category: sonarr-anime)
+    │   └── anime/            ← qBittorrent downloads here (category: sonarr-anime)
     └── media/
         ├── movies/           ← Radarr hardlinks here → Plex reads this
-        └── tv/               ← Sonarr hardlinks here → Plex reads this
+        ├── tv/               ← Sonarr hardlinks here → Plex reads this
+        └── anime/            ← Sonarr Anime hardlinks here → Plex reads this
 ```
 
 ---
