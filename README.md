@@ -19,6 +19,7 @@
 |---|---|---|
 | [Plex](https://plex.tv) | Media server | `32400` |
 | [Sonarr](https://sonarr.tv) | TV show automation | `8989` |
+| [Sonarr Anime](https://sonarr.tv) | Anime automation | `8990` |
 | [Radarr](https://radarr.video) | Movie automation | `7878` |
 | [Prowlarr](https://github.com/Prowlarr/Prowlarr) | Indexer manager | `9696` |
 | [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) | Cloudflare bypass | `8191` |
@@ -49,7 +50,8 @@ downloads instantly — zero extra disk space, qBittorrent keeps seeding, Plex s
 └── data/                     ← One volume = hardlinks work
     ├── torrents/
     │   ├── movies/           ← qBittorrent downloads here (category: radarr)
-    │   └── tv/               ← qBittorrent downloads here (category: sonarr)
+    │   ├── tv/               ← qBittorrent downloads here (category: sonarr)
+│   └── anime/            ← qBittorrent downloads here (category: sonarr-anime)
     └── media/
         ├── movies/           ← Radarr hardlinks here → Plex reads this
         └── tv/               ← Sonarr hardlinks here → Plex reads this
@@ -115,6 +117,7 @@ sudo docker compose ps
 | qBittorrent | `http://NAS_IP:8080` |
 | Prowlarr | `http://NAS_IP:9696` |
 | Sonarr | `http://NAS_IP:8989` |
+| Sonarr Anime | `http://NAS_IP:8990` |
 | Radarr | `http://NAS_IP:7878` |
 | Plex | `http://NAS_IP:32400/web` |
 | Pi-hole | `http://NAS_IP:8053/admin` |
@@ -131,6 +134,7 @@ sudo docker compose ps
 - [qBittorrent Setup](docs/qbittorrent.md) — categories, paths, settings
 - [Prowlarr & FlareSolverr](docs/prowlarr.md) — indexers and Cloudflare bypass
 - [Sonarr Setup](docs/sonarr.md) — TV automation
+- [Sonarr Anime Setup](docs/sonarr-anime.md) — Anime automation (separate instance)
 - [Radarr Setup](docs/radarr.md) — movie automation
 - [Plex Setup](docs/plex.md) — libraries and hardware transcoding
 - [Pi-hole Setup](docs/pihole.md) — network ad-blocking and DHCP

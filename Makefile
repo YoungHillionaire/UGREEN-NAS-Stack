@@ -3,11 +3,14 @@
 setup:
 	mkdir -p /volume1/data/torrents/movies
 	mkdir -p /volume1/data/torrents/tv
+	mkdir -p /volume1/data/torrents/anime
 	mkdir -p /volume1/data/media/movies
 	mkdir -p /volume1/data/media/tv
+	mkdir -p /volume1/data/media/anime
 	mkdir -p /volume1/docker/config/qbittorrent
 	mkdir -p /volume1/docker/config/prowlarr
 	mkdir -p /volume1/docker/config/sonarr
+	mkdir -p /volume1/docker/config/sonarr-anime
 	mkdir -p /volume1/docker/config/radarr
 	mkdir -p /volume1/docker/config/plex
 	mkdir -p /volume1/docker/config/pihole/etc-pihole

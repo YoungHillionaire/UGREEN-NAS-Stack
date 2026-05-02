@@ -112,6 +112,20 @@ services:
       - "8989:8989"
     restart: unless-stopped
 
+  sonarr-anime:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr-anime
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/sonarr-anime:/config   # separate config = separate database
+      - ${DATA_ROOT}:/data                    # same /data root = hardlinks work
+    ports:
+      - "8990:8989"
+    restart: unless-stopped
+
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
