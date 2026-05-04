@@ -141,6 +141,24 @@ services:
     restart: unless-stopped
 
   # ─────────────────────────────────────────────
+  # SUBTITLE MANAGER
+  # ─────────────────────────────────────────────
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/bazarr:/config
+      - ${DATA_ROOT}/media:/data/media
+    ports:
+      - "6767:6767"
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
   # MEDIA SERVER
   # ─────────────────────────────────────────────
 

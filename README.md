@@ -25,6 +25,7 @@
 | [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) | Cloudflare bypass | `8191` |
 | [qBittorrent](https://www.qbittorrent.org) | Download client | `8080` |
 | [Pi-hole](https://pi-hole.net) | Network-wide ad-blocker & DNS | `8053` |
+| [Bazarr](https://bazarr.media) | Subtitle manager | `6767` |
 | [Tailscale](https://tailscale.com) | Secure remote access VPN | — |
 
 ---
@@ -45,6 +46,7 @@ downloads instantly — zero extra disk space, qBittorrent keeps seeding, Plex s
 │       ├── sonarr-anime/
 │       ├── radarr/
 │       ├── plex/
+│       ├── bazarr/
 │       └── pihole/
 │           ├── etc-pihole/
 │           └── etc-dnsmasq.d/
@@ -123,6 +125,7 @@ sudo docker compose ps
 | Radarr | `http://NAS_IP:7878` |
 | Plex | `http://NAS_IP:32400/web` |
 | Pi-hole | `http://NAS_IP:8053/admin` |
+| Bazarr | `http://NAS_IP:6767` |
 
 > Once Tailscale is running, replace `NAS_IP` with your Tailscale IP to access everything remotely.
 
@@ -138,7 +141,8 @@ sudo docker compose ps
 - [Sonarr Setup](docs/sonarr.md) — TV automation
 - [Sonarr Anime Setup](docs/sonarr-anime.md) — Anime automation (separate instance)
 - [Radarr Setup](docs/radarr.md) — movie automation
-- [Plex Setup](docs/plex.md) — libraries and hardware transcoding
+- [Plex Setup](docs/plex.md)
+- [Bazarr Setup](docs/bazarr.md) — automatic subtitle downloads — libraries and hardware transcoding
 - [Pi-hole Setup](docs/pihole.md) — network ad-blocking and DHCP
 - [Tailscale Setup](docs/tailscale.md) — secure remote access
 

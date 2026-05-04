@@ -13,6 +13,7 @@ setup:
 	mkdir -p /volume1/docker/config/sonarr-anime
 	mkdir -p /volume1/docker/config/radarr
 	mkdir -p /volume1/docker/config/plex
+	mkdir -p /volume1/docker/config/bazarr
 	mkdir -p /volume1/docker/config/pihole/etc-pihole
 	mkdir -p /volume1/docker/config/pihole/etc-dnsmasq.d
 	@echo "✅ Folder structure created."
