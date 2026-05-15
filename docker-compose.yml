@@ -120,8 +120,8 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${CONFIG_ROOT}/sonarr-anime:/config   # separate config = separate database
-      - ${DATA_ROOT}:/data                    # same /data root = hardlinks work
+      - ${CONFIG_ROOT}/sonarr-anime:/config
+      - ${DATA_ROOT}:/data
     ports:
       - "8990:8989"
     restart: unless-stopped
@@ -159,7 +159,7 @@ services:
     restart: unless-stopped
 
   # ─────────────────────────────────────────────
-  # MEDIA SERVER
+  # MEDIA SERVERS
   # ─────────────────────────────────────────────
 
   plex:
@@ -175,6 +175,25 @@ services:
     volumes:
       - ${CONFIG_ROOT}/plex:/config
       - ${DATA_ROOT}/media:/data/media
+    devices:
+      - /dev/dri:/dev/dri
+    restart: unless-stopped
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/jellyfin:/config
+      - ${DATA_ROOT}/media:/data/media
+    ports:
+      - "8096:8096"
+      - "8920:8920"
+      - "7359:7359/udp"
+      - "1900:1900/udp"
     devices:
       - /dev/dri:/dev/dri
     restart: unless-stopped

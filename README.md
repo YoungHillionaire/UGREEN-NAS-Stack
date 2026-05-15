@@ -18,6 +18,7 @@
 | Service | Purpose | Port |
 |---|---|---|
 | [Plex](https://plex.tv) | Media server | `32400` |
+| [Jellyfin](https://jellyfin.org) | Free open source media server | `8096` |
 | [Sonarr](https://sonarr.tv) | TV show automation | `8989` |
 | [Sonarr Anime](https://sonarr.tv) | Anime automation | `8990` |
 | [Radarr](https://radarr.video) | Movie automation | `7878` |
@@ -46,6 +47,7 @@ downloads instantly — zero extra disk space, qBittorrent keeps seeding, Plex s
 │       ├── sonarr-anime/
 │       ├── radarr/
 │       ├── plex/
+│       ├── jellyfin/
 │       ├── bazarr/
 │       └── pihole/
 │           ├── etc-pihole/
@@ -124,6 +126,7 @@ sudo docker compose ps
 | Sonarr Anime | `http://NAS_IP:8990` |
 | Radarr | `http://NAS_IP:7878` |
 | Plex | `http://NAS_IP:32400/web` |
+| Jellyfin | `http://NAS_IP:8096` |
 | Pi-hole | `http://NAS_IP:8053/admin` |
 | Bazarr | `http://NAS_IP:6767` |
 
@@ -142,6 +145,7 @@ sudo docker compose ps
 - [Sonarr Anime Setup](docs/sonarr-anime.md) — Anime automation (separate instance)
 - [Radarr Setup](docs/radarr.md) — movie automation
 - [Plex Setup](docs/plex.md)
+- [Jellyfin Setup](docs/jellyfin.md) — free open source alternative
 - [Bazarr Setup](docs/bazarr.md) — automatic subtitle downloads — libraries and hardware transcoding
 - [Pi-hole Setup](docs/pihole.md) — network ad-blocking and DHCP
 - [Tailscale Setup](docs/tailscale.md) — secure remote access
