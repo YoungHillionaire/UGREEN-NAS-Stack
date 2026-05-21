@@ -27,6 +27,7 @@
 | [qBittorrent](https://www.qbittorrent.org) | Download client | `8080` |
 | [Pi-hole](https://pi-hole.net) | Network-wide ad-blocker & DNS | `8053` |
 | [Bazarr](https://bazarr.media) | Subtitle manager | `6767` |
+| [Cloudflare Tunnel](https://cloudflare.com) | Secure public access, no port forwarding | — |
 | [Tailscale](https://tailscale.com) | Secure remote access VPN | — |
 
 ---
@@ -148,7 +149,8 @@ sudo docker compose ps
 - [Jellyfin Setup](docs/jellyfin.md) — free open source alternative
 - [Bazarr Setup](docs/bazarr.md) — automatic subtitle downloads — libraries and hardware transcoding
 - [Pi-hole Setup](docs/pihole.md) — network ad-blocking and DHCP
-- [Tailscale Setup](docs/tailscale.md) — secure remote access
+- [Tailscale Setup](docs/tailscale.md)
+- [Cloudflare Tunnel](docs/cloudflare-tunnel.md) — free public access for Plex — secure remote access
 
 ---
 
