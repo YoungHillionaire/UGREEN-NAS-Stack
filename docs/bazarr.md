@@ -1,94 +1,62 @@
 # Bazarr Setup
 
-Bazarr automatically downloads subtitles for all your movies and TV shows
-by connecting to Sonarr and Radarr and monitoring your media library.
-
----
+Bazarr manages subtitles for media tracked by Sonarr and Radarr. It uses the same media directory mount as the media servers.
 
 ## First Login
 
-Open `http://NAS_IP:6767`
-
----
+Open `http://NAS_IP:6767` and configure authentication under the application settings.
 
 ## Connect Sonarr
 
-**Settings → Sonarr**
+Under **Settings → Sonarr**, configure:
 
 | Field | Value |
 |---|---|
-| Host | NAS IP |
+| Address | NAS IP or reachable host |
 | Port | `8989` |
-| API Key | From Sonarr → Settings → General |
-| Base URL | *(leave empty)* |
+| API Key | Sonarr → Settings → General |
+| Base URL | Leave empty unless you configured one |
 
-Toggle **Enabled** → Test → Save
-
----
+Test and save.
 
 ## Connect Radarr
 
-**Settings → Radarr**
+Under **Settings → Radarr**, configure:
 
 | Field | Value |
 |---|---|
-| Host | NAS IP |
+| Address | NAS IP or reachable host |
 | Port | `7878` |
-| API Key | From Radarr → Settings → General |
-| Base URL | *(leave empty)* |
+| API Key | Radarr → Settings → General |
+| Base URL | Leave empty unless you configured one |
 
-Toggle **Enabled** → Test → Save
+Test and save.
 
----
+## Connect Sonarr Anime (Optional)
 
-## Connect Sonarr Anime
-
-**Settings → Sonarr** → Add a second Sonarr instance
+If your installed Bazarr version supports an additional Sonarr instance, add Sonarr Anime separately:
 
 | Field | Value |
 |---|---|
-| Host | NAS IP |
+| Address | NAS IP or reachable host |
 | Port | `8990` |
-| API Key | From Sonarr Anime → Settings → General |
+| API Key | Sonarr Anime → Settings → General |
 
-Toggle **Enabled** → Test → Save
+Test and save. Confirm that the Bazarr version and configuration support the extra instance before relying on it.
 
----
+## Path Mapping
 
-## Add Subtitle Providers
+Bazarr's Compose mount is `${DATA_ROOT}/media:/data/media`. Its media paths should therefore match the paths returned by Sonarr/Radarr, such as `/data/media/movies` and `/data/media/tv`. Avoid adding a remote path mapping unless the reported paths actually differ.
 
-**Settings → Providers → + Add**
+## Subtitle Providers and Languages
 
-Recommended free providers:
-- **OpenSubtitles.com** — create a free account at opensubtitles.com
-- **Subscene** 
-- **Addic7ed** — good for TV shows
+1. Configure only providers for which you have valid accounts/credentials and that are currently supported by your Bazarr version.
+2. Create a language profile under **Settings → Languages**.
+3. Assign the profile to the relevant movies and series.
+4. Test on a small number of items before running a full-library search.
 
-For anime subtitles add:
-- **Jimaku** — dedicated anime subtitle provider
+Provider availability, authentication requirements, and menu names can change between releases; use the provider's current documentation if a setting is missing.
 
----
+## Existing Library
 
-## Language Settings
-
-**Settings → Languages → + Add Language Profile**
-
-1. Name: `English`
-2. Add language: `English`
-3. Toggle **Enabled**
-4. Save
-
-Then assign this profile to movies and shows under:
-- **Settings → Sonarr → Default Settings → Language Profile**
-- **Settings → Radarr → Default Settings → Language Profile**
-
----
-
-## Sync Existing Library
-
-After setup, force a sync to grab subtitles for everything already downloaded:
-
-**System → Tasks → Update all episodes subtitles**
-**System → Tasks → Update all movies subtitles**
-
-This runs in the background — check **System → Logs** to monitor progress.
+Run a subtitle search or sync task on a small sample first. A full-library search can create substantial provider traffic and may be subject to rate limits.
