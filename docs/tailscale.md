@@ -1,75 +1,64 @@
 # Tailscale Setup
 
-Tailscale creates an encrypted peer-to-peer VPN mesh. Once set up you can access
-all your NAS services from anywhere using private Tailscale IPs — no port forwarding,
-no exposed ports, no dynamic DNS needed.
-
----
+Tailscale provides an encrypted private network between your devices. It is the recommended way to reach NAS services remotely without publishing their administration interfaces to the internet.
 
 ## Before Starting
 
-1. Create a free account at https://tailscale.com
-2. Go to https://login.tailscale.com/admin/settings/keys
-3. Click **Generate auth key**
-4. Toggle **Reusable** ON — this lets the container re-authenticate after reboots
-5. Copy the key and paste it into `.env` as `TAILSCALE_AUTHKEY`
+1. Create an account at [Tailscale](https://tailscale.com).
+2. Generate an auth key in the [Tailscale admin console](https://login.tailscale.com/admin/settings/keys).
+3. Use a key with permissions and expiry settings appropriate to your security requirements.
+4. Store it in the local `.env` as `TAILSCALE_AUTHKEY`. Never commit or share this key.
 
----
+## Important: Preserve Tailscale State
+
+The current Compose file uses host networking and persists Tailscale state at:
+
+`/var/lib/tailscale` (host path) → `/var/lib/tailscale` (container path)
+
+That state preserves the NAS device identity across container restarts. Do not delete, empty, or casually remap this directory. Changing it can cause the NAS to appear as a new Tailscale device and may require reauthorization.
+
+Back up or protect this directory according to your NAS backup plan. Do not copy its contents into a public repository.
 
 ## First-Time Verification
 
-After `docker compose up -d`, check Tailscale joined your network:
+After starting the service:
 
 ```bash
+sudo docker compose ps tailscale
+sudo docker logs --tail=100 tailscale
 sudo docker exec tailscale tailscale status
-```
-
-Get your NAS Tailscale IP:
-```bash
 sudo docker exec tailscale tailscale ip
-# Returns something like 100.64.0.1
 ```
 
----
+The IP output should include the NAS's Tailscale address.
 
 ## Access Services Remotely
 
-Install the Tailscale app on your phone or laptop and sign in with the same account.
-You're now on the same private network as your NAS wherever you are.
+Install Tailscale on your phone or computer and sign in to the same tailnet. Use the NAS Tailscale IP to reach services:
 
-Replace `NAS_IP` with your Tailscale IP (e.g. `100.x.x.x`):
-
-| Service | Remote URL |
+| Service | URL |
 |---|---|
-| qBittorrent | `http://100.x.x.x:8080` |
-| Prowlarr | `http://100.x.x.x:9696` |
-| Sonarr | `http://100.x.x.x:8989` |
-| Radarr | `http://100.x.x.x:7878` |
-| Plex | `http://100.x.x.x:32400/web` |
-| Pi-hole | `http://100.x.x.x:8053/admin` |
+| qBittorrent | `http://TAILSCALE_IP:8080` |
+| Prowlarr | `http://TAILSCALE_IP:9696` |
+| Sonarr | `http://TAILSCALE_IP:8989` |
+| Sonarr Anime | `http://TAILSCALE_IP:8990` |
+| Radarr | `http://TAILSCALE_IP:7878` |
+| Plex | `http://TAILSCALE_IP:32400/web` |
+| Jellyfin | `http://TAILSCALE_IP:8096` |
+| Pi-hole | `http://TAILSCALE_IP:8053/admin` |
+| Bazarr | `http://TAILSCALE_IP:6767` |
 
----
+These services are intended for trusted devices in your tailnet. Use Tailscale ACLs/grants and device approval to control who can reach them.
 
-## Use Pi-hole Remotely via Tailscale
+## Optional: Use Pi-hole for Tailnet DNS
 
-You can route DNS through Pi-hole even when away from home:
-
-1. Go to Tailscale Admin → **DNS**
-2. Add your NAS Tailscale IP as a **Global Nameserver**
-3. Enable **Override local DNS**
-
-Now all your devices use Pi-hole's ad-blocking even on mobile data.
-
----
+You can configure Pi-hole as a nameserver in Tailscale's DNS settings, but do this only after Pi-hole is stable on the LAN. Confirm that the NAS can resolve external names and that clients can still reach local services before enabling global DNS override.
 
 ## Troubleshooting
 
-If Tailscale loses connection after a reboot:
-```bash
-sudo docker exec tailscale tailscale up
-```
-
-Check connection status:
 ```bash
 sudo docker exec tailscale tailscale status
+sudo docker logs --tail=100 tailscale
 ```
+
+If the node is disconnected, inspect the logs and auth-key expiry first. Do not delete the state directory as a troubleshooting shortcut.
