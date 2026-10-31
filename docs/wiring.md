@@ -1,81 +1,103 @@
 # Wiring the Stack
 
-After all containers are up, connect them in this order:
-
-```
-qBittorrent → Prowlarr → Sonarr & Radarr → Plex
-```
-
----
+This guide connects the services after the containers have been configured. It describes the default paths in this repository; existing installations may use different working paths.
 
 ## The Full Flow
 
 ```
-You search in Radarr/Sonarr
-  → Prowlarr finds a release on your indexers
-    → qBittorrent downloads it to /data/torrents/movies or /data/torrents/tv
-      → Radarr/Sonarr hardlinks it to /data/media/movies or /data/media/tv
-        → Plex sees it and adds it to your library
+Sonarr / Sonarr Anime / Radarr
+  → Prowlarr supplies indexers
+  → the *arr app sends a release to qBittorrent
+  → qBittorrent downloads under /data/torrents
+  → the *arr app imports or hardlinks into /data/media
+  → Plex and Jellyfin scan the media library
 ```
 
----
+All containers that need to access downloads and media must see compatible paths. In this Compose file, qBittorrent mounts the torrent directory at `/data/torrents`, while the *arr apps mount the full data root at `/data`.
 
 ## Step 1 — qBittorrent
-- Change default password
-- Create categories: `radarr` → `/data/torrents/movies`, `sonarr` → `/data/torrents/tv`
-- Enable **Use Category paths in Manual Mode**
 
-See [qBittorrent Setup](qbittorrent.md)
+- Change the temporary WebUI password.
+- Create categories:
+  - `radarr` → `/data/torrents/movies`
+  - `sonarr` → `/data/torrents/tv`
+  - `sonarr-anime` → `/data/torrents/anime`
+- Confirm the save paths exist inside the qBittorrent container.
 
----
+See [qBittorrent Setup](qbittorrent.md).
 
 ## Step 2 — Prowlarr
-- Add FlareSolverr at `http://flaresolverr:8191`
-- Add your indexers
-- Connect to Sonarr and Radarr using their API keys
 
-See [Prowlarr & FlareSolverr](prowlarr.md)
+1. Open Prowlarr at `http://NAS_IP:9696`.
+2. Add your indexers.
+3. If a supported indexer requires FlareSolverr, configure its application URL as `http://flaresolverr:8191`.
+4. Under **Settings → Apps**, add Sonarr, Sonarr Anime, and Radarr as separate applications.
 
----
+Use the internal Docker service names and container ports for app-to-app communication:
+
+| Application | URL from Prowlarr |
+|---|---|
+| Sonarr | `http://sonarr:8989` |
+| Sonarr Anime | `http://sonarr-anime:8989` |
+| Radarr | `http://radarr:7878` |
+
+Enter each application's API key from its **Settings → General** page. Test and save each connection.
+
+See [Prowlarr & FlareSolverr](prowlarr.md).
 
 ## Step 3 — Sonarr
-- Set root folder: `/data/media/tv`
-- Add qBittorrent as download client with category `sonarr`
-- Verify indexers synced from Prowlarr
 
-See [Sonarr Setup](sonarr.md)
+- Root folder: `/data/media/tv`
+- qBittorrent host: `qbittorrent` (or NAS IP if using the published host port)
+- qBittorrent port: `8080`
+- Category: `sonarr`
 
----
+See [Sonarr Setup](sonarr.md).
 
-## Step 4 — Radarr
-- Set root folder: `/data/media/movies`
-- Add qBittorrent as download client with category `radarr`
-- Verify indexers synced from Prowlarr
+## Step 4 — Sonarr Anime
 
-See [Radarr Setup](radarr.md)
+- Root folder: `/data/media/anime`
+- qBittorrent category: `sonarr-anime`
+- Prowlarr application entry: `http://sonarr-anime:8989`
 
----
+See [Sonarr Anime Setup](sonarr-anime.md).
 
-## Step 5 — Plex
-- Add libraries pointing to `/data/media/movies` and `/data/media/tv`
-- Enable hardware transcoding
+## Step 5 — Radarr
 
-See [Plex Setup](plex.md)
+- Root folder: `/data/media/movies`
+- qBittorrent category: `radarr`
 
----
+See [Radarr Setup](radarr.md).
 
-## Step 6 — Pi-hole
-- Disable NAS built-in DNS first
-- Set router DNS to NAS IP
+## Step 6 — Plex and Jellyfin
 
-See [Pi-hole Setup](pihole.md)
+Add libraries using the paths inside each media-server container:
 
----
+- Movies: `/data/media/movies`
+- TV: `/data/media/tv`
+- Anime: `/data/media/anime`
 
-## Verify Everything Works
+See [Plex](plex.md) and [Jellyfin](jellyfin.md).
 
-1. Go to Radarr → search for a movie → Add → Search
-2. Watch **Activity → Queue** — should show downloading
-3. Check qBittorrent — torrent should appear under `radarr` category in `/data/torrents/movies`
-4. When complete, check Radarr **Activity → History** — should say **Hardlinked**
-5. Check Plex — movie should appear in your Movies library
+## Step 7 — Bazarr
+
+Connect Bazarr to Sonarr and Radarr using their API keys. Add Sonarr Anime as a second Sonarr connection if your Bazarr version supports the additional instance. Keep the paths consistent with the media mounts shown in Compose.
+
+See [Bazarr Setup](bazarr.md).
+
+## Step 8 — Pi-hole and remote access
+
+Pi-hole uses host networking and requires careful port-53 planning. Do not disable UGOS DNS services without confirming what depends on them. For remote access, Tailscale is the private-access option. Treat Cloudflare Tunnel as an optional, explicitly configured public entry point.
+
+See [Pi-hole](pihole.md), [Tailscale](tailscale.md), and [Cloudflare Tunnel](cloudflare-tunnel.md).
+
+## Verify the End-to-End Flow
+
+1. Use one test item in Radarr or Sonarr.
+2. Confirm the release is sent to the expected qBittorrent category.
+3. Confirm the download completes in the expected torrent directory.
+4. Confirm the app imports it into the matching media root.
+5. Check the app's history/event details to see whether it hardlinked or copied.
+6. Confirm Plex or Jellyfin can see the imported media.
+
+A successful import does not always mean a hardlink was created. If hardlinking matters, confirm both paths are on the same filesystem and inspect the link count on the NAS.
