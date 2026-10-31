@@ -1,10 +1,11 @@
 .PHONY: setup up down logs pull restart
 
-# Read the same paths used by Docker Compose.
+# Read only path settings from .env; do not parse secrets as Make syntax.
 # Defaults preserve the documented UGREEN volume layout.
--include .env
-CONFIG_ROOT ?= /volume1/docker/config
-DATA_ROOT ?= /volume1/data
+CONFIG_ROOT ?= $(shell sed -n 's/^CONFIG_ROOT=//p' .env 2>/dev/null | tail -n 1)
+DATA_ROOT ?= $(shell sed -n 's/^DATA_ROOT=//p' .env 2>/dev/null | tail -n 1)
+CONFIG_ROOT := $(if $(strip $(CONFIG_ROOT)),$(CONFIG_ROOT),/volume1/docker/config)
+DATA_ROOT := $(if $(strip $(DATA_ROOT)),$(DATA_ROOT),/volume1/data)
 
 setup:
 	mkdir -p "$(DATA_ROOT)/torrents/movies"
