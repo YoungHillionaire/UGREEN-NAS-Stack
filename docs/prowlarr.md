@@ -1,52 +1,44 @@
 # Prowlarr & FlareSolverr
 
-Prowlarr manages all your indexers in one place and syncs them to Sonarr and Radarr automatically.
-FlareSolverr lets Prowlarr access Cloudflare-protected indexers.
-
----
+Prowlarr manages indexers and synchronizes them with Sonarr, Sonarr Anime, and Radarr. FlareSolverr is an optional helper for indexers that require browser challenge handling; it does not guarantee that an indexer will work.
 
 ## Prowlarr Setup
 
-### Authentication
-1. Open `http://NAS_IP:9696`
-2. Set a username and password when prompted
+1. Open `http://NAS_IP:9696`.
+2. Configure authentication under **Settings → General**.
+3. Add only indexers you are permitted to use and that are compatible with your apps.
 
-### Add FlareSolverr
-1. **Settings → Indexers → + Add**
-2. Search `FlareSolverr`
-3. URL: `http://flaresolverr:8191`
-4. Test → Save
+## Add FlareSolverr (Optional)
 
-### Add Indexers
-1. **Indexers → Add Indexer**
-2. Search for indexers (e.g. YTS, 1337x, ThePirateBay)
-3. For Cloudflare-protected indexers, select FlareSolverr in the indexer settings
-4. Test → Save
+If an indexer supports FlareSolverr:
 
-### Connect to Sonarr & Radarr
-**Settings → Apps → + Add Application**
+1. Open the indexer's settings in Prowlarr.
+2. Configure its FlareSolverr proxy with URL `http://flaresolverr:8191`.
+3. Test the indexer.
 
-**Sonarr:**
-| Field | Value |
-|---|---|
-| Prowlarr Server | `http://prowlarr:9696` |
-| Sonarr Server | `http://sonarr:8989` |
-| API Key | From Sonarr → Settings → General |
+FlareSolverr is reachable by the service name because the containers share the default Compose network.
 
-**Radarr:**
-| Field | Value |
-|---|---|
-| Prowlarr Server | `http://prowlarr:9696` |
-| Radarr Server | `http://radarr:7878` |
-| API Key | From Radarr → Settings → General |
+## Connect the *arr Applications
 
-Test → Save for both. Prowlarr will now sync all indexers automatically.
+Go to **Settings → Apps → + Add Application**. Add each app separately.
 
----
+| Application | Prowlarr URL | Application URL |
+|---|---|---|
+| Sonarr | `http://prowlarr:9696` | `http://sonarr:8989` |
+| Sonarr Anime | `http://prowlarr:9696` | `http://sonarr-anime:8989` |
+| Radarr | `http://prowlarr:9696` | `http://radarr:7878` |
 
-## FlareSolverr
+For each entry:
+1. Select the correct application type.
+2. Enter the internal service URL shown above.
+3. Copy the API key from that app's **Settings → General** page.
+4. Test and save.
 
-FlareSolverr runs a headless browser to solve Cloudflare challenges.
-It runs on port `8191` and is used automatically by Prowlarr for protected indexers.
+Prowlarr can then synchronize compatible indexers to the connected applications.
 
-No further setup needed beyond adding it in Prowlarr as shown above.
+## Troubleshooting
+
+- Confirm all relevant containers are running: `sudo docker compose ps`.
+- Test service-to-service URLs using Docker service names and container ports, not the NAS-published host port.
+- Check the Prowlarr and target app logs.
+- A FlareSolverr proxy cannot solve every challenge and should not be treated as a guarantee of indexer availability.
