@@ -1,89 +1,76 @@
 # Cloudflare Tunnel Setup
 
-Cloudflare Tunnel creates a secure outbound connection from your NAS to Cloudflare.
-No port forwarding, no exposed ports, bypasses Double NAT completely — all for free.
+Cloudflare Tunnel creates an outbound connection from your NAS to Cloudflare. It can publish a service without opening an inbound router port, but a public hostname still makes that service reachable from the internet unless you protect it with an access policy.
 
----
+**Prefer Tailscale for private access to NAS administration tools.** Do not publish qBittorrent, Sonarr, Radarr, Prowlarr, Pi-hole, or other admin interfaces to the public internet.
 
-## How It Works
+## Choose the Right Tunnel Type
 
-```
-Friends/Dad → Cloudflare → encrypted tunnel → your NAS → Plex
-```
+There are two different options:
 
-Your NAS reaches OUT to Cloudflare so nothing needs to be open on your router.
+- **Named Tunnel:** persistent tunnel managed in your Cloudflare account. For a normal public hostname such as `plex.example.com`, you need a domain/zone active in that Cloudflare account.
+- **Quick Tunnel:** temporary development tunnel that creates a random `trycloudflare.com` URL. It is not a stable hostname and is not the named-tunnel setup used by this Compose service.
 
----
+The Compose service in this repository runs a **named tunnel using a token**.
 
-## Step 1 — Create the Tunnel
+## 1. Create a Named Tunnel
 
-1. Go to https://one.dash.cloudflare.com
-2. **Networks → Tunnels → Create a Tunnel**
-3. Choose **Cloudflared**
-4. Name it `plex`
-5. Skip the install instructions (you're using Docker instead)
-6. Copy the tunnel token shown
-7. Paste it into `.env` as `CLOUDFLARE_TUNNEL_TOKEN`
+1. Open the Cloudflare dashboard.
+2. Go to **Networks → Tunnels** and create a tunnel using Cloudflared.
+3. Give it a descriptive name, such as `ugreen-nas`.
+4. Copy the tunnel token.
+5. Put it in the local `.env` file as `CLOUDFLARE_TUNNEL_TOKEN=...`.
 
----
+Do not commit the token or include it in screenshots, logs, or support requests.
 
-## Step 2 — Start the Container
+## 2. Start the Container
+
+Run this from the directory containing this repository's Compose file:
 
 ```bash
-cd /volume1/docker
+sudo docker compose config
 sudo docker compose up -d cloudflared
-sudo docker logs cloudflared
+sudo docker logs --tail=100 cloudflared
 ```
 
-You should see `Connected to Cloudflare` in the logs.
-Go back to the Cloudflare tunnel page — status should show **Connected**.
+Confirm the tunnel reports a healthy connection in the Cloudflare dashboard.
 
----
+## 3. Add a Public Hostname
 
-## Step 3 — Add a Public Hostname
+In the Cloudflare dashboard, open the named tunnel and add a public hostname. Choose a domain/zone already active in your Cloudflare account.
 
-In the Cloudflare tunnel dashboard:
+Example for a custom domain:
 
-1. Click your tunnel → **Edit**
-2. Go to **Public Hostname** tab
-3. Click **Add a public hostname**
-
-| Field | Value |
+| Field | Example |
 |---|---|
 | Subdomain | `plex` |
-| Domain | `trycloudflare.com` (free) or your own domain |
-| Service Type | `HTTP` |
-| URL | `192.168.100.10:32400` |
+| Domain | `example.com` (your own Cloudflare-managed zone) |
+| Service type | `HTTP` |
+| URL | `http://NAS_LAN_IP:32400` |
 
-4. Save
+Replace the example with your actual domain and NAS LAN address. The origin URL must be reachable from the cloudflared container. In this Compose file, cloudflared uses the default bridge network, while Plex uses host networking; use the NAS LAN IP and Plex port unless you have verified another reachable address.
 
-Your Plex will now be accessible at:
-`https://plex.trycloudflare.com` (or your custom subdomain)
+The resulting hostname will be `https://plex.example.com`, not `https://plex.trycloudflare.com`.
 
----
+## 4. Protect the Published Service
 
-## Step 4 — Set Custom Server URL in Plex
+A public hostname is not private just because the origin is behind a tunnel.
 
-1. Plex Web → **Settings → Network**
-2. Find **Custom server access URLs**
-3. Add: `https://plex.trycloudflare.com`
-4. Save
+- Add Cloudflare Access or another suitable authentication layer where compatible with the client.
+- Do not expose administration interfaces or download clients.
+- Check the service's own remote-access requirements and Cloudflare's current service terms before using a tunnel for media streaming.
+- Test with the actual Plex clients you intend to use; browser playback and native client connectivity may behave differently.
 
----
+For private access to the full NAS stack, use [Tailscale](tailscale.md) instead.
 
-## Upgrading to a Custom Domain Later
+## Quick Tunnels (Temporary Testing Only)
 
-1. Buy a domain on Cloudflare (~$8/year) — it's automatically added to your account
-2. Go back to your tunnel → **Public Hostname**
-3. Change domain from `trycloudflare.com` to your own domain
-4. Update the custom URL in Plex settings
-5. Done — stable permanent URL that never changes
+A Quick Tunnel is a separate feature. It is started with a command such as:
 
----
+```bash
+cloudflared tunnel --url http://localhost:8080
+```
 
-## Important Notes
+Cloudflare assigns a random `trycloudflare.com` URL. The URL is temporary and stops working when the process stops. It does not create a stable named-tunnel hostname and is not configured by the token-based Compose service above.
 
-- The free `trycloudflare.com` URL **changes on every container restart**
-- For stability, either avoid restarting cloudflared or get a proper domain
-- Cloudflare free tier has no bandwidth limits for tunnels
-- All traffic is encrypted end-to-end
+See the [Cloudflare Tunnel setup guide](https://developers.cloudflare.com/tunnel/get-started/) and [Quick Tunnel documentation](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
