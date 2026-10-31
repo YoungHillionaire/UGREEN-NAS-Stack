@@ -1,95 +1,83 @@
 # Pi-hole Setup
 
-Pi-hole blocks ads and trackers network-wide at the DNS level — no browser extension needed on any device.
+Pi-hole filters DNS requests for devices that use it as their DNS resolver. In this repository, Pi-hole uses **host networking**, so it shares the NAS network namespace and needs access to DNS port 53.
 
----
+> **Important:** Do not assume that stopping or disabling a service named `dnsmasq` is safe on UGOS. It may be involved in NAS networking, DHCP, local name resolution, or other system functions. Identify the process and its dependencies before changing host services.
 
-## Before Starting — Free Port 53
+## 1. Check Port 53 Before Starting
 
-The UGREEN NAS runs its own `dnsmasq` DNS service on port 53 which conflicts with Pi-hole.
-Disable it first via SSH:
+Over SSH, inspect what is listening:
 
 ```bash
-sudo systemctl stop dnsmasq
-sudo systemctl disable dnsmasq
+sudo ss -tulpn | grep ':53'
 ```
 
-Verify port 53 is free:
-```bash
-sudo ss -tulpn | grep :53
-# Should show nothing on port 53
-```
+If something is using port 53, identify the process and determine whether UGOS depends on it. Do not run `systemctl stop dnsmasq` or `systemctl disable dnsmasq` as a generic fix. If you cannot confidently establish that the service can be stopped without affecting UGOS, leave it running and do not start Pi-hole in host-network mode yet.
 
-Now bring Pi-hole up:
+Also check whether your router currently provides DHCP and DNS. Avoid moving DHCP responsibilities to Pi-hole unless you have planned the migration and can recover router access.
+
+## 2. Pi-hole v6 Environment Variables
+
+The Compose file currently uses these legacy names:
+
+- `WEBPASSWORD`
+- `PIHOLE_DNS_`
+- `DNSMASQ_LISTENING`
+
+Pi-hole v6 uses the `FTLCONF_...` naming convention for these settings. The corresponding v6 variables are:
+
+| Legacy variable in current Compose | Pi-hole v6 variable |
+|---|---|
+| `WEBPASSWORD` | `FTLCONF_webserver_api_password` |
+| `PIHOLE_DNS_` | `FTLCONF_dns_upstreams` |
+| `DNSMASQ_LISTENING` | `FTLCONF_dns_listeningMode` |
+
+The web port setting `FTLCONF_webserver_port=8053` is already using the v6 format.
+
+**This repository's Compose file has not been migrated automatically.** Before changing it on an existing NAS, back up `CONFIG_ROOT/pihole`, check the running Pi-hole version and current settings, and confirm that the new variables preserve the intended configuration. Environment variables set through `FTLCONF_...` become read-only in Pi-hole's UI/CLI while they remain defined.
+
+See the [official Pi-hole Docker configuration](https://docs.pi-hole.net/docker/configuration/) and [v5-to-v6 migration guide](https://docs.pi-hole.net/docker/upgrading/v5-v6/).
+
+## 3. Start and Verify
+
+Only after port 53 is available and the Compose configuration has been reviewed:
+
 ```bash
+sudo docker compose config
 sudo docker compose up -d pihole
+sudo docker logs --tail=100 pihole
 ```
 
----
+Open `http://NAS_IP:8053/admin`. The configured password must match the effective Pi-hole v6 setting or the password already stored in its persistent configuration.
 
-## Pi-hole v6 Note
+## 4. Configure Router DNS
 
-This stack uses Pi-hole v6 which configures settings differently from older versions.
-The web port is set via `FTLCONF_webserver_port=8053` in the compose file — the old
-`WEB_PORT` variable no longer works.
+If Pi-hole is healthy and resolving queries:
 
----
+1. Open your router's LAN/DHCP DNS settings.
+2. Set the primary DNS to the NAS LAN IP.
+3. Decide on a fallback resolver deliberately. A public secondary DNS may allow devices to bypass Pi-hole rather than acting as a true failover.
+4. Apply the change to one test device first.
+5. Confirm normal browsing and local NAS access before changing the whole network.
 
-## First Login
+Keep router DHCP enabled unless you intentionally plan to migrate DHCP to Pi-hole.
 
-Open `http://NAS_IP:8053/admin`
+## 5. DHCP (Optional)
 
-Password is whatever you set as `PIHOLE_PASSWORD` in `.env`.
+Only use Pi-hole as the DHCP server if your router supports disabling its own DHCP service and you have planned the change. Never run two DHCP servers on the same LAN.
 
----
+Before enabling it, record the router's current LAN address, DHCP range, reservations, and recovery procedure.
 
-## Set Pi-hole as Your Router DNS
+## 6. Verify DNS
 
-1. Log into your router (usually `192.168.1.1`)
-2. Find **DHCP / DNS settings**
-3. Set **Primary DNS** → your NAS IP
-4. Set **Secondary DNS** → `1.1.1.1` (fallback if NAS is rebooting)
-5. Save and reboot router
+From a client configured to use Pi-hole:
 
-All devices on the network now use Pi-hole automatically.
-
----
-
-## Enable DHCP (Optional)
-
-If you want Pi-hole to handle DHCP instead of your router:
-
-1. Pi-hole Admin → **Settings → DHCP**
-2. Enable DHCP server
-3. Set IP range (e.g. `192.168.1.100` to `192.168.1.200`)
-4. Set Gateway to your router IP
-5. Save
-6. Then disable DHCP on your router to avoid conflicts
-
----
-
-## Add Block Lists
-
-**Group Management → Adlists → Add**
-
-Recommended:
-- `https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts`
-- `https://raw.githubusercontent.com/anudeepND/blacklist/master/adservers.txt`
-- `https://blocklistproject.github.io/Lists/malware.txt`
-
-After adding: **Tools → Update Gravity**
-
----
-
-## Verify It's Working
 ```bash
-nslookup doubleclick.net NAS_IP
-# Should return 0.0.0.0 (blocked)
+nslookup example.com NAS_IP
 ```
 
-## Whitelist Common False Positives
+Use Pi-hole's query log to confirm that the request arrived. A blocked domain may return a sinkhole address or a configured blocking response; do not rely on one fixed answer for every blocklist.
 
-**Whitelist** these if things break:
-- `clients4.google.com`
-- `clients2.google.com`
-- `s.youtube.com`
+## 7. Backups
+
+Back up the persistent `CONFIG_ROOT/pihole` directory before upgrades or configuration changes. Keep a copy of the router's DNS/DHCP settings so you can revert clients if the NAS is unavailable.
