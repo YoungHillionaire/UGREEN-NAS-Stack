@@ -2,8 +2,8 @@
 
 # 🖥️ UGREEN NAS DXP2800 — Home Media Stack
 
-**A fully automated self-hosted media server stack built on Docker Compose.**  
-**Runs on UGREEN NAS DXP2800 with Intel QuickSync hardware transcoding.**
+**A self-hosted media server stack built on Docker Compose.**  
+**Designed for UGREEN NAS DXP2800 with Intel QuickSync hardware transcoding.**
 
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -17,31 +17,29 @@
 
 | Service | Purpose | Port |
 |---|---|---|
-| [Plex](https://plex.tv) | Media server | `32400` |
-| [Jellyfin](https://jellyfin.org) | Free open source media server | `8096` |
+| [Plex](https://plex.tv) | Media server | `32400` (host network) |
+| [Jellyfin](https://jellyfin.org) | Free open-source media server | `8096` |
 | [Sonarr](https://sonarr.tv) | TV show automation | `8989` |
-| [Sonarr Anime](https://sonarr.tv) | Anime automation | `8990` |
+| [Sonarr Anime](https://sonarr.tv) | Separate anime automation instance | `8990` |
 | [Radarr](https://radarr.video) | Movie automation | `7878` |
 | [Prowlarr](https://github.com/Prowlarr/Prowlarr) | Indexer manager | `9696` |
-| [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) | Cloudflare bypass | `8191` |
+| [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) | Browser challenge helper for supported indexers | `8191` |
 | [qBittorrent](https://www.qbittorrent.org) | Download client | `8080` |
-| [Pi-hole](https://pi-hole.net) | Network-wide ad-blocker & DNS | `8053` |
+| [Pi-hole](https://pi-hole.net) | Network-wide ad blocker and DNS | `8053` |
 | [Bazarr](https://bazarr.media) | Subtitle manager | `6767` |
-| [Cloudflare Tunnel](https://cloudflare.com) | Secure public access, no port forwarding | — |
-| [Tailscale](https://tailscale.com) | Secure remote access VPN | — |
+| [Cloudflare Tunnel](https://cloudflare.com) | Optional public access through an outbound tunnel | — |
+| [Tailscale](https://tailscale.com) | Private remote access VPN | — |
 
 ---
 
 ## 🗂️ Folder Structure
 
-Built around the **TRaSH Guides hardlink-compatible layout**.
-Everything lives under one `/data` root so Sonarr/Radarr can hardlink finished
-downloads instantly — zero extra disk space, qBittorrent keeps seeding, Plex serves the file.
+The stack uses a single data root for downloads and media. Keeping both on the same filesystem allows Sonarr and Radarr to create hardlinks instead of copying files.
 
 ```
 /volume1/
 ├── docker/
-│   └── config/               ← All app configs & databases — BACK THIS UP
+│   └── config/               ← App configs and databases — BACK THIS UP
 │       ├── qbittorrent/
 │       ├── prowlarr/
 │       ├── sonarr/
@@ -51,73 +49,85 @@ downloads instantly — zero extra disk space, qBittorrent keeps seeding, Plex s
 │       ├── jellyfin/
 │       ├── bazarr/
 │       └── pihole/
-│           ├── etc-pihole/
-│           └── etc-dnsmasq.d/
-└── data/                     ← One volume = hardlinks work
+└── data/                     ← Keep torrents and media on one filesystem
     ├── torrents/
-    │   ├── movies/           ← qBittorrent downloads here (category: radarr)
-    │   ├── tv/               ← qBittorrent downloads here (category: sonarr)
-    │   └── anime/            ← qBittorrent downloads here (category: sonarr-anime)
+    │   ├── movies/           ← qBittorrent category: radarr
+    │   ├── tv/               ← qBittorrent category: sonarr
+    │   └── anime/            ← qBittorrent category: sonarr-anime
     └── media/
-        ├── movies/           ← Radarr hardlinks here → Plex reads this
-        ├── tv/               ← Sonarr hardlinks here → Plex reads this
-        └── anime/            ← Sonarr Anime hardlinks here → Plex reads this
+        ├── movies/           ← Radarr library
+        ├── tv/               ← Sonarr library
+        └── anime/            ← Sonarr Anime library
 ```
+
+Container paths are deliberately consistent: qBittorrent sees downloads under `/data/torrents`; the *arr apps see the shared data root under `/data`.
 
 ---
 
 ## 🚀 Quick Start
 
+> **For a new installation only.** If this stack is already running, do not overwrite your existing Compose file, app databases, download paths, or Tailscale state. Read [Existing installations and safety checks](docs/configuration.md#existing-installations-and-safety-checks) first.
+
 ### 1. Prerequisites
 - UGREEN NAS DXP2800 running UGOS Pro
-- Docker installed via UGOS App Center
+- Docker / Docker Compose installed through UGOS
 - SSH access enabled
 - A [Plex account](https://plex.tv)
-- A [Tailscale account](https://tailscale.com) (free tier is fine)
+- A [Tailscale account](https://tailscale.com) if you want private remote access
 
-### 2. Prepare Pi-hole — free port 53
-```bash
-sudo systemctl stop dnsmasq
-sudo systemctl disable dnsmasq
-```
+### 2. Create shared folders in UGOS
+Create the `docker` and `data` shared folders. Confirm that they are on the intended storage volume.
 
-### 3. Create shared folders in UGOS
-In UGOS File Manager create two shared folders: `data` and `docker`
+### 3. Clone the repository
+SSH into the NAS and clone the repository into the Docker shared folder:
 
-### 4. Clone the repo onto your NAS
 ```bash
 ssh your-user@NAS_IP
-cd /volume1
-git clone https://github.com/YOUR_USERNAME/ugreen-nas-stack
-cd ugreen-nas-stack
+cd /volume1/docker
+git clone https://github.com/YoungHillionaire/UGREEN-NAS-Stack.git
+cd UGREEN-NAS-Stack
 ```
 
-### 5. Create the folder structure
-```bash
-sudo make setup
-```
+If your shared folder is on a different volume, adjust the paths in the next step and in `.env`.
 
-### 6. Configure your environment
+### 4. Configure the environment
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Fill in:
-- `PUID` / `PGID` — run `id your-username`
-- `PIHOLE_PASSWORD` — anything you want
-- `TAILSCALE_AUTHKEY` — from [tailscale.com/admin/settings/keys](https://login.tailscale.com/admin/settings/keys)
-- `PLEX_CLAIM` — from [plex.tv/claim](https://plex.tv/claim) right before launch
+Set at least:
+- `CONFIG_ROOT` and `DATA_ROOT` to the actual shared-folder paths
+- `PUID` and `PGID` from `id your-username`
+- `PIHOLE_PASSWORD` to a strong password
+- `TAILSCALE_AUTHKEY` if using Tailscale
+- `CLOUDFLARE_TUNNEL_TOKEN` if using a named Cloudflare Tunnel
+- `PLEX_CLAIM` immediately before first launch, if needed
 
-### 7. Launch
+Keep `.env` private. Never commit it or paste its secrets into issues or screenshots.
+
+### 5. Create the folders
 ```bash
+sudo make setup
+```
+
+The Makefile reads `.env` and uses `CONFIG_ROOT` and `DATA_ROOT`. Review those paths before running it.
+
+### 6. Review host networking before starting Pi-hole
+Pi-hole uses host networking and needs port 53. Do **not** blindly stop or disable UGOS services such as `dnsmasq`. First identify what is listening on port 53 and confirm that disabling it will not affect NAS name resolution, DHCP, or other UGOS features. See [Pi-hole setup](docs/pihole.md).
+
+### 7. Review and launch
+```bash
+sudo docker compose config
 sudo docker compose up -d
 sudo docker compose ps
 ```
 
+Inspect the rendered configuration for missing variables and unexpected paths before launching. Start with the services you have configured; do not expose admin interfaces publicly by default.
+
 ---
 
-## 🔗 Service URLs
+## 🔗 Local Service URLs
 
 | Service | URL |
 |---|---|
@@ -131,38 +141,44 @@ sudo docker compose ps
 | Pi-hole | `http://NAS_IP:8053/admin` |
 | Bazarr | `http://NAS_IP:6767` |
 
-> Once Tailscale is running, replace `NAS_IP` with your Tailscale IP to access everything remotely.
+Use your NAS LAN address locally. For remote access, prefer Tailscale; see its guide. A public tunnel is optional and should be limited to the services and users you actually intend to expose.
 
 ---
 
 ## 📚 Documentation
 
-- [Configuration](docs/configuration.md) — all `.env` variables explained
-- [Folder Structure](docs/folder-structure.md) — why hardlinks need one volume
-- [Wiring the Stack](docs/wiring.md) — connecting all services together
-- [qBittorrent Setup](docs/qbittorrent.md) — categories, paths, settings
-- [Prowlarr & FlareSolverr](docs/prowlarr.md) — indexers and Cloudflare bypass
+- [Configuration](docs/configuration.md) — environment variables and existing-install safety
+- [Folder Structure](docs/folder-structure.md) — hardlinks and paths
+- [Wiring the Stack](docs/wiring.md) — service connections and test flow
+- [qBittorrent Setup](docs/qbittorrent.md) — categories, paths, and settings
+- [Prowlarr & FlareSolverr](docs/prowlarr.md) — indexers and app connections
 - [Sonarr Setup](docs/sonarr.md) — TV automation
-- [Sonarr Anime Setup](docs/sonarr-anime.md) — Anime automation (separate instance)
+- [Sonarr Anime Setup](docs/sonarr-anime.md) — separate anime instance
 - [Radarr Setup](docs/radarr.md) — movie automation
 - [Plex Setup](docs/plex.md)
-- [Jellyfin Setup](docs/jellyfin.md) — free open source alternative
-- [Bazarr Setup](docs/bazarr.md) — automatic subtitle downloads — libraries and hardware transcoding
-- [Pi-hole Setup](docs/pihole.md) — network ad-blocking and DHCP
-- [Tailscale Setup](docs/tailscale.md)
-- [Cloudflare Tunnel](docs/cloudflare-tunnel.md) — free public access for Plex — secure remote access
+- [Jellyfin Setup](docs/jellyfin.md)
+- [Bazarr Setup](docs/bazarr.md)
+- [Pi-hole Setup](docs/pihole.md) — DNS, host networking, and port 53 precautions
+- [Tailscale Setup](docs/tailscale.md) — private remote access
+- [Cloudflare Tunnel](docs/cloudflare-tunnel.md) — named tunnels and temporary quick tunnels
 
 ---
 
 ## ⚙️ Useful Commands
 
+Run these from the directory containing `docker-compose.yml`:
+
 ```bash
-sudo docker compose up -d            # start all containers
-sudo docker compose down             # stop all containers
+sudo docker compose config           # validate and render configuration
+sudo docker compose up -d            # start or recreate configured containers
 sudo docker compose ps               # check status
-sudo docker compose logs -f          # live logs
-sudo make pull                       # update all images + restart
+sudo docker compose logs -f          # follow logs
+sudo docker compose pull             # download newer images only
+sudo docker compose up -d            # apply pulled images (review first)
+sudo docker compose down             # stop and remove containers; data volumes remain
 ```
+
+Updating images can change application behaviour, especially when an image uses the `:latest` tag. Back up app configuration and review release notes before applying updates.
 
 ---
 

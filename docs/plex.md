@@ -2,40 +2,42 @@
 
 ## Claim Token (First Run Only)
 
-Before launching, get a claim token:
-1. Go to https://plex.tv/claim while logged in
-2. Copy the token (starts with `claim-`)
-3. Paste into `.env` as `PLEX_CLAIM=claim-xxxxx`
-4. Run `docker compose up -d` within 4 minutes
+For a new Plex server:
 
-After first launch Plex stores auth internally — you can clear `PLEX_CLAIM` from `.env`.
+1. Open [plex.tv/claim](https://plex.tv/claim) while signed in.
+2. Copy the temporary claim token.
+3. Put it in the local `.env` as `PLEX_CLAIM=claim-...`.
+4. Start Plex promptly; the token expires after a short time.
+
+After the server is claimed, remove the token from `.env`. Do not commit or share it.
 
 ## Initial Setup
 
-1. Open `http://NAS_IP:32400/web`
-2. Sign in with your Plex account
-3. Name your server (e.g. `HussainNAS`)
+Open `http://NAS_IP:32400/web`, sign in, and give the server a name.
 
 ## Add Libraries
 
-1. **Settings → Libraries → Add Library**
-2. **Movies** → Add Folder → `/data/media/movies`
-3. **Add Library** again → **TV Shows** → `/data/media/tv`
+Under **Settings → Libraries → Add Library**:
 
-Plex will scan automatically. Nothing shows until downloads complete.
+- Movies: `/data/media/movies`
+- TV Shows: `/data/media/tv`
+- Anime (optional): `/data/media/anime`
+
+These are paths inside the Plex container, not NAS host paths.
 
 ## Hardware Transcoding (Intel QuickSync)
 
-The DXP2800 N100/N305 supports Intel QuickSync — already enabled in `docker-compose.yml` via `/dev/dri`.
+The Compose file passes `/dev/dri` into the container. In Plex:
 
-To activate in Plex:
-1. **Settings → Transcoder**
-2. Enable **Use hardware acceleration when available**
-3. Enable **Use hardware-accelerated video encoding**
-4. Save
+1. Open **Settings → Transcoder**.
+2. Enable **Use hardware acceleration when available**.
+3. Enable hardware-accelerated video encoding if supported.
+4. Save and test a transcode.
 
-> Requires a **Plex Pass** subscription. Without it, transcoding uses CPU which still works fine.
+Hardware transcoding availability depends on Plex Pass, the installed image/driver, supported codecs, and the media format. During playback, inspect the Plex dashboard for the `(hw)` indicator.
 
-## Verify Transcoding
-While something is playing/transcoding, check the Now Playing dashboard.
-You should see `(hw)` next to the stream — that means QuickSync is active.
+## Remote Access
+
+For private access, prefer [Tailscale](tailscale.md). Plex's own remote-access feature and third-party tunnels have different networking and client requirements; do not assume a Cloudflare Tunnel will work for every Plex client or streaming mode.
+
+Do not publish the NAS administration or *arr services just to make Plex reachable. Review Plex's current remote-access documentation and test with the actual clients you use.
