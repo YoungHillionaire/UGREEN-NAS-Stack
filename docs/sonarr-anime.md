@@ -1,116 +1,87 @@
 # Sonarr Anime Setup
 
-A dedicated Sonarr instance just for anime — separate library, separate quality
-profiles, same hardlink setup.
-
----
-
-## Why a Separate Instance?
-
-- Anime has different naming conventions (e.g. absolute episode numbers)
-- Different quality preferences (1080p WEB vs Blu-ray)
-- Keeps your anime completely separate from regular TV in Plex
-- Both instances share the same `/data` mount so hardlinks still work
-
----
+A dedicated Sonarr instance for anime, with its own configuration, quality profiles, and library. It shares the same data mount as the main Sonarr and Radarr instances so hardlinks remain possible.
 
 ## Folder Structure
 
 ```
 /volume1/data/
 ├── torrents/
-│   └── anime/           ← qBittorrent downloads here (category: sonarr-anime)
+│   └── anime/           ← qBittorrent category: sonarr-anime
 └── media/
-    └── anime/           ← Sonarr Anime hardlinks here → Plex reads this
+    └── anime/           ← Sonarr Anime library
 ```
 
----
+Inside the containers, these paths are `/data/torrents/anime` and `/data/media/anime`.
 
 ## Create the Folders
 
+From the repository directory, after configuring `.env`:
+
 ```bash
-mkdir -p /volume1/data/torrents/anime
-mkdir -p /volume1/data/media/anime
-mkdir -p /volume1/docker/config/sonarr-anime
+sudo make setup
 ```
 
-Or just run `sudo make setup` — it handles all of this.
+Or create the folders manually using the values of `DATA_ROOT` and `CONFIG_ROOT` in `.env`.
 
----
+## qBittorrent Category
 
-## qBittorrent — Add Anime Category
+In qBittorrent, add a category:
 
-1. Open qBittorrent `http://NAS_IP:8080`
-2. Left sidebar → right-click **Categories → Add Category**
-3. Name: `sonarr-anime`
-4. Save Path: `/data/torrents/anime`
-5. Hit OK
+- Name: `sonarr-anime`
+- Save path: `/data/torrents/anime`
 
----
+See [qBittorrent Setup](qbittorrent.md) for the other categories and path checks.
 
 ## Sonarr Anime Setup
 
-Open `http://NAS_IP:8990`
+Open `http://NAS_IP:8990`.
 
 ### Authentication
-**Settings → General → Authentication** — set username and password
+Under **Settings → General → Authentication**, configure authentication.
 
 ### Root Folder
-**Settings → Media Management → Root Folders → Add**
-Path: `/data/media/anime`
+Under **Settings → Media Management → Root Folders**, add:
+
+`/data/media/anime`
 
 ### Connect qBittorrent
-**Settings → Download Clients → + Add → qBittorrent**
+
+Under **Settings → Download Clients → + Add → qBittorrent**:
 
 | Field | Value |
 |---|---|
-| Host | NAS IP |
+| Host | NAS IP or reachable qBittorrent hostname |
 | Port | `8080` |
-| Username | `admin` |
-| Password | your qBittorrent password |
+| Username | Your qBittorrent username |
+| Password | Your qBittorrent password |
 | Category | `sonarr-anime` |
 
-Test → Save
+Test and save. Use the same category name as qBittorrent.
 
-### Anime-Specific Settings
-**Settings → Media Management**
-- Series Folder Format: `{Series TitleYear} [imdbid-{ImdbId}]`
-- Enable **Rename Episodes**
-- Standard Episode Format: `{Series Title} - S{season:00}E{episode:00} - {Episode Title}`
+### Anime Naming and Quality
 
-### Quality Profile
-For anime, a good starting profile:
-1. **Settings → Profiles → Add**
-2. Name: `Anime-1080p`
-3. Enable: `Bluray-1080p`, `WEBRip-1080p`, `WEBDL-1080p`
-4. Save
+Choose naming and quality settings that match your release sources and library. Absolute episode numbering and season/episode numbering are not interchangeable for every anime series; verify the series type and episode mapping before enabling automatic renaming.
 
----
+The example quality profile in older versions of this guide is only a starting point. Review current quality definitions and custom formats rather than assuming a profile fits every anime release group.
 
 ## Connect to Prowlarr
 
-In Prowlarr → **Settings → Apps → + Add Application → Sonarr**
+In Prowlarr, go to **Settings → Apps → + Add Application → Sonarr**.
 
 | Field | Value |
 |---|---|
 | Name | Sonarr Anime |
-| Prowlarr Server | `http://prowlarr:9696` |
-| Sonarr Server | `http://sonarr-anime:8989` |
-| API Key | From Sonarr Anime → Settings → General |
+| Prowlarr URL | `http://prowlarr:9696` |
+| Sonarr URL | `http://sonarr-anime:8989` |
+| API Key | Sonarr Anime → Settings → General |
 
-Test → Save
+Test and save. Add only indexers you are entitled to use and that are appropriate for your content.
 
-Add anime-specific indexers in Prowlarr (e.g. **Nyaa**, **AniDex**) — these will
-sync to Sonarr Anime automatically.
+## Plex or Jellyfin Library
 
----
+Add a TV Shows library named `Anime` and point it to:
 
-## Plex — Add Anime Library
+`/data/media/anime`
 
-1. Plex → **Settings → Libraries → Add Library**
-2. Choose **TV Shows**
-3. Name it `Anime`
-4. Add folder: `/data/media/anime`
-5. Save
-
-Plex will keep anime completely separate from your regular TV library.
+The media-server container sees the same path because Compose mounts `${DATA_ROOT}/media` at `/data/media`.
