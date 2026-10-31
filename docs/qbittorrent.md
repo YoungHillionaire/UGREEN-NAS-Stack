@@ -1,43 +1,50 @@
 # qBittorrent Setup
 
+qBittorrent is the download client used by Sonarr, Sonarr Anime, and Radarr.
+
 ## First Login
 
-Default credentials on first launch — check logs for temporary password:
+On a fresh LinuxServer.io container, check the logs for the temporary WebUI password:
+
 ```bash
 sudo docker logs qbittorrent
-# Look for: "A temporary password is provided for this session: XXXXXXXX"
 ```
 
-Login at `http://NAS_IP:8080` with `admin` + the temporary password.
+Look for the temporary password message, then log in at `http://NAS_IP:8080` with username `admin`.
 
 ## Change the Password
 
-**Tools → Options → WebUI → Password** — change it immediately.
+In qBittorrent, open **Tools → Options → WebUI** and set a strong password. Store it in your password manager.
 
 ## Download Settings
 
-**Tools → Options → Downloads → Saving Management**
+Open **Tools → Options → Downloads**.
 
-| Setting | Value |
+| Setting | Suggested value |
 |---|---|
-| Default Torrent Management Mode | Automatic |
 | Default Save Path | `/data/torrents` |
-| Use Category paths in Manual Mode | ✅ Checked |
+| Default Torrent Management Mode | Automatic (recommended starting point) |
 
-> **Important:** "Use Category paths in Manual Mode" must be checked or downloads will ignore category paths and dump everything in `/data/torrents`.
+The container maps the NAS torrent directory to `/data/torrents`. Do not enter a host path such as `/volume1/data/torrents` inside qBittorrent.
 
 ## Create Categories
 
-In the left sidebar, right-click **Categories → Add Category**:
+In the left sidebar, right-click **Categories → Add Category**. Create these categories and paths:
 
-| Category Name | Save Path |
+| Category | Save path inside qBittorrent |
 |---|---|
 | `radarr` | `/data/torrents/movies` |
 | `sonarr` | `/data/torrents/tv` |
+| `sonarr-anime` | `/data/torrents/anime` |
+
+Use the matching category in the corresponding app's qBittorrent download-client settings. Category save paths and torrent-management mode interact; test with one non-critical download before changing an established setup.
 
 ## Connection Port
 
-**Tools → Options → Connection**
-- Listening port: `6881`
+Under **Tools → Options → Connection**, use listening port `6881` if it matches the Compose mapping. The container publishes TCP and UDP port 6881.
 
-Save everything and you're done.
+## Verify the Paths
+
+After creating a test download, check that it appears in the expected category and folder in qBittorrent. Then confirm that the same path is visible to the relevant *arr container under `/data`.
+
+> **Existing installations:** Do not change the default save path or category paths just to match this guide if your downloads are already working. First compare your current Compose volume mounts with qBittorrent's actual save paths. A path must exist inside the container, not merely on the NAS.
