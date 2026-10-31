@@ -1,82 +1,51 @@
 # Jellyfin Setup
 
-Jellyfin is a free and open source media server — a great alternative or companion to Plex.
-It points at the same `/data/media` folder as Plex so no extra disk space is used.
-
-## Why Run Both?
-
-- Jellyfin is 100% free — no Plex Pass needed for hardware transcoding or remote access
-- Better subtitle support
-- No account required for local streaming
-- Great for sharing with people who don't have Plex accounts
-- Plex for your main setup, Jellyfin as backup or for specific users
-
----
+Jellyfin is a free and open-source media server. In this stack it reads the same media directories as Plex, so it does not need a separate media copy.
 
 ## First Login
 
-Open `http://NAS_IP:8096`
+Open `http://NAS_IP:8096` and follow the setup wizard:
 
-Follow the setup wizard:
-1. Set language
-2. Create admin username and password
-3. Add media libraries (see below)
-4. Skip the rest for now
-
----
+1. Choose your language.
+2. Create an administrator username and strong password.
+3. Add your libraries using the paths below.
 
 ## Add Libraries
 
-1. **Dashboard → Libraries → Add Media Library**
+Under **Dashboard → Libraries → Add Media Library**:
 
-**Movies:**
-- Content type: `Movies`
-- Display name: `Movies`
+**Movies**
+- Content type: Movies
+- Display name: Movies
 - Folder: `/data/media/movies`
 
-**TV Shows:**
-- Content type: `Shows`
-- Display name: `TV`
+**TV Shows**
+- Content type: Shows
+- Display name: TV
 - Folder: `/data/media/tv`
 
-**Anime:**
-- Content type: `Shows`
-- Display name: `Anime`
+**Anime**
+- Content type: Shows
+- Display name: Anime
 - Folder: `/data/media/anime`
-
----
 
 ## Hardware Transcoding (Intel QuickSync)
 
-Already enabled via `/dev/dri` in the compose file.
+The Compose file passes `/dev/dri` into the container. To enable hardware acceleration:
 
-To activate in Jellyfin:
-1. **Dashboard → Playback → Transcoding**
-2. Hardware acceleration: **Intel QuickSync (QSV)**
-3. Enable all codec checkboxes
-4. Save
+1. Open **Dashboard → Playback → Transcoding**.
+2. Select Intel QuickSync (QSV), if supported by the installed driver and hardware.
+3. Enable only the codecs supported by your hardware.
+4. Save and test playback.
 
-No Jellyfin account or subscription needed — completely free.
-
----
+If hardware acceleration is unavailable, check that the NAS exposes `/dev/dri`, that the container can access the device, and that the installed Jellyfin image includes compatible drivers.
 
 ## Remote Access
 
-Unlike Plex, Jellyfin doesn't rely on a cloud service.
-Remote access works by forwarding port `8096` on your router:
+Prefer a private VPN such as Tailscale for remote access. Do not expose Jellyfin's administration interface directly to the public internet without a deliberate security plan, authentication, and an understanding of the risks.
 
-- External port: `8096`
-- Internal port: `8096`
-- IP: NAS IP
-- Protocol: TCP
+If you choose a reverse proxy or tunnel, configure it specifically for Jellyfin and test the web client and native apps. Do not assume that every proxy or tunnel supports every streaming protocol or client feature.
 
-Then access from anywhere: `http://YOUR_PUBLIC_IP:8096`
+## Users and Sharing
 
----
-
-## Users & Sharing
-
-**Dashboard → Users → Add User**
-
-Create accounts for family/friends — they log in directly to your Jellyfin server.
-No third party account needed, everything stays on your NAS.
+Create separate accounts under **Dashboard → Users**. Use strong passwords and grant each account only the permissions it needs.
